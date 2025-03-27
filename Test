@@ -1,9 +1,27 @@
-        MxNode rootNode = MxNode.parse(fedwireXmlTemplate);
-        MxNode creDtNode = rootNode.findFirstByName("CreDt", "urn:iso:std:iso:20022:tech:xsd:head.001.001.03");
-        if (creDtNode != null) {
-            creDtNode.setValue(currentTime); // Update CreDt with system time
-        } else {
-            System.err.println("No CreDt element found in the input XML");
+     try {
+            // Parse XML into DOM
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true); // Enable namespace awareness
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(new java.io.ByteArrayInputStream(fedwireXmlTemplate.getBytes(StandardCharsets.UTF_8)));
+
+            // Locate <ns2:CreDt> element
+            NodeList creDtNodes = doc.getElementsByTagNameNS("urn:iso:std:iso:20022:tech:xsd:head.001.001.03", "CreDt");
+            if (creDtNodes.getLength() > 0) {
+                Element creDtElement = (Element) creDtNodes.item(0);
+                creDtElement.setTextContent(currentTime); // Update with system time
+            } else {
+                throw new IllegalStateException("No <ns2:CreDt> element found in the input XML");
+            }
+
+            // Serialize DOM back to string
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty("omit-xml-declaration", "no"); // Keep XML declaration
+            StringWriter writer = new StringWriter();
+            transformer.transform(new DOMSource(doc), new StreamResult(writer));
+            fedwireXml = writer.toString();
+        } catch (Exception e) {
+            System.err.println("Error modifying XML: " + e.getMessage());
             return;
         }
-        String fedwireXml = rootNode.toXml(); // Serialize back to string
