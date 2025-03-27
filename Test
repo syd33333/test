@@ -1,22 +1,22 @@
- // Parse the XML into an MxPacs00800110 object
-        MxPacs00800110 mx = MxPacs00800110.parse(xml);
+// Parse the XML into an MxPacs00800108 object
+        MxPacs00800108 mx = MxPacs00800108.parse(xml);
 
-        // Access the FIToFICustomerCreditTransferV10 object
-        FIToFICustomerCreditTransferV10 fiToFiCstmrCdtTrf = mx.getFIToFICstmrCdtTrf();
+        // Access the FIToFICustomerCreditTransferV08 object
+        FIToFICustomerCreditTransferV08 fiToFiCstmrCdtTrf = mx.getFIToFICstmrCdtTrf();
 
-        // Group Header details (corrected type: GroupHeader93 for pacs.008.001.10)
-        GroupHeader93 grpHdr = fiToFiCstmrCdtTrf.getGrpHdr();
+        // Group Header details (correct type: GroupHeader81 for pacs.008.001.08)
+        GroupHeader81 grpHdr = fiToFiCstmrCdtTrf.getGrpHdr();
         String msgId = grpHdr.getMsgId(); // e.g., "MSG-20250327-001"
         String creDtTm = grpHdr.getCreDtTm().toString(); // e.g., "2025-03-27T15:30:00"
         String settlementMethod = grpHdr.getSttlmInf().getSttlmMtd().value(); // e.g., "CLRG"
         String clearingSystem = grpHdr.getSttlmInf().getClrSys() != null ? 
                                 grpHdr.getSttlmInf().getClrSys().getPrtry() : "N/A"; // e.g., "SWIFT"
 
-        // Get the CreditTransferTransactionInformation (corrected type: CreditTransferTransactionInformation10)
-        CreditTransferTransactionInformation10 cdtTrfTxInf = fiToFiCstmrCdtTrf.getCdtTrfTxInf().get(0);
+        // Get the CreditTransferTransactionInformation (correct type for 008.001.08)
+        CreditTransferTransactionInformation10CdtTrfTxInf cdtTrfTxInf = fiToFiCstmrCdtTrf.getCdtTrfTxInf().get(0);
 
         // Payment Identification
-        PaymentIdentification13 pmtId = cdtTrfTxInf.getPmtId();
+        PaymentIdentification3 pmtId = cdtTrfTxInf.getPmtId();
         String instrId = pmtId.getInstrId(); // e.g., "INSTR12345"
         String endToEndId = pmtId.getEndToEndId(); // e.g., "E2E-98765"
         String txId = pmtId.getTxId(); // e.g., "TXID-001"
@@ -31,25 +31,25 @@
                                cdtTrfTxInf.getIntrBkSttlmDt().toString() : "N/A"; // e.g., "2025-03-28"
 
         // Debtor
-        PartyIdentification135 dbtr = cdtTrfTxInf.getDbtr();
+        PartyIdentification43 dbtr = cdtTrfTxInf.getDbtr();
         String debtorName = dbtr.getNm(); // e.g., "John Doe"
         String debtorCountry = dbtr.getPstlAdr() != null ? dbtr.getPstlAdr().getCtry() : "N/A"; // e.g., "DE"
         String debtorAddress = dbtr.getPstlAdr() != null && !dbtr.getPstlAdr().getAdrLine().isEmpty() ? 
                                dbtr.getPstlAdr().getAdrLine().get(0) : "N/A"; // e.g., "123 Main St"
 
         // Debtor Account
-        CashAccount40 dbtrAcct = cdtTrfTxInf.getDbtrAcct();
+        CashAccount24 dbtrAcct = cdtTrfTxInf.getDbtrAcct();
         String debtorIBAN = dbtrAcct != null && dbtrAcct.getId().getIBAN() != null ? 
                             dbtrAcct.getId().getIBAN() : "N/A"; // e.g., "DE89370400440532013000"
 
         // Creditor
-        PartyIdentification135 cdtr = cdtTrfTxInf.getCdtr();
+        PartyIdentification43 cdtr = cdtTrfTxInf.getCdtr();
         String creditorName = cdtr.getNm(); // e.g., "Jane Smith"
         String creditorCountry = cdtr.getPstlAdr() != null ? cdtr.getPstlAdr().getCtry() : "N/A"; // e.g., "FR"
         String creditorAddress = cdtr.getPstlAdr() != null && !cdtr.getPstlAdr().getAdrLine().isEmpty() ? 
                                  cdtr.getPstlAdr().getAdrLine().get(0) : "N/A"; // e.g., "456 High St"
 
         // Creditor Account
-        CashAccount40 cdtrAcct = cdtTrfTxInf.getCdtrAcct();
+        CashAccount24 cdtrAcct = cdtTrfTxInf.getCdtrAcct();
         String creditorIBAN = cdtrAcct != null && cdtrAcct.getId().getIBAN() != null ? 
                               cdtrAcct.getId().getIBAN() : "N/A"; // e.g., "FR1420041010050500013M02606"
