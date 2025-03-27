@@ -1,7 +1,4 @@
-// Parse the XML into an MxPacs00800108 object
-        MxPacs00800108 mx = MxPacs00800108.parse(xml);
-
-        // Access the FIToFICustomerCreditTransferV08 object
+ // Access the FIToFICustomerCreditTransferV08 object
         FIToFICustomerCreditTransferV08 fiToFiCstmrCdtTrf = mx.getFIToFICstmrCdtTrf();
 
         // Group Header details (correct type: GroupHeader81 for pacs.008.001.08)
@@ -12,8 +9,8 @@
         String clearingSystem = grpHdr.getSttlmInf().getClrSys() != null ? 
                                 grpHdr.getSttlmInf().getClrSys().getPrtry() : "N/A"; // e.g., "SWIFT"
 
-        // Get the CreditTransferTransactionInformation (correct type for 008.001.08)
-        CreditTransferTransactionInformation10CdtTrfTxInf cdtTrfTxInf = fiToFiCstmrCdtTrf.getCdtTrfTxInf().get(0);
+        // Get the CreditTransferTransactionInformation (correct type: CreditTransferTransactionInformation10)
+        CreditTransferTransactionInformation10 cdtTrfTxInf = fiToFiCstmrCdtTrf.getCdtTrfTxInf().get(0);
 
         // Payment Identification
         PaymentIdentification3 pmtId = cdtTrfTxInf.getPmtId();
