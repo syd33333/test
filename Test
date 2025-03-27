@@ -1,1 +1,49 @@
-test
+ MxPacs00200110 pacs002 = new MxPacs00200110();
+        FIToFIPaymentStatusReportV10 statusReport = new FIToFIPaymentStatusReportV10();
+
+        // Dynamic timestamp for status report (30 minutes later)
+        String statusTime = ZonedDateTime.now().plusMinutes(30).format(DateTimeFormatter.ISO_INSTANT);
+
+        // Group Header
+        GroupHeader93 pacs002GrpHdr = new GroupHeader93();
+        pacs002GrpHdr.setMsgId("STS-MSG123");
+        pacs002GrpHdr.setCreDtTm(statusTime);
+        pacs002GrpHdr.setInstgAgt(parsedPacs008.getFIToFICustomerCreditTransfer().getGrpHdr().getInstgAgt());
+        pacs002GrpHdr.setInstdAgt(parsedPacs008.getFIToFICustomerCreditTransfer().getGrpHdr().getInstdAgt());
+        statusReport.setGrpHdr(pacs002GrpHdr);
+
+        // Original Group Information and Status
+        OriginalGroupHeader17 orGroupInfAndSts = new OriginalGroupHeader17();
+        orGroupInfAndSts.setOrgnlMsgId(parsedPacs008.getFIToFICustomerCreditTransfer().getGrpHdr().getMsgId());
+        orGroupInfAndSts.setOrgnlMsgNmId("pacs.008.001.08");
+        orGroupInfAndSts.setOrgnlNbOfTxs(parsedPacs008.getFIToFICustomerCreditTransfer().getGrpHdr().getNbOfTxs());
+        orGroupInfAndSts.setOrgnlCreDtTm(parsedPacs008.getFIToFICustomerCreditTransfer().getGrpHdr().getCreDtTm());
+        orGroupInfAndSts.setOrgnlCtrlSum(parsedPacs008.getFIToFICustomerCreditTransfer().getGrpHdr().getTtlIntrBkSttlmAmt() != null ? 
+            parsedPacs008.getFIToFICustomerCreditTransfer().getGrpHdr().getTtlIntrBkSttlmAmt().getValue() : null);
+        orGroupInfAndSts.setGrpSts(TransactionGroupStatus3Code.ACSC);
+        statusReport.setOrgnlGrpInfAndSts(orGroupInfAndSts);
+
+        // Transaction Information and Status
+        PaymentTransaction125 txInfAndSts = new PaymentTransaction125();
+        CreditTransferTransaction35 cdtTrf = parsedPacs008.getFIToFICustomerCreditTransfer().getCdtTrfTxInf().get(0);
+        txInfAndSts.setOrgnlInstrId(cdtTrf.getPmtId().getInstrId());
+        txInfAndSts.setOrgnlEndToEndId(cdtTrf.getPmtId().getEndToEndId());
+        txInfAndSts.setOrgnlTxId(cdtTrf.getPmtId().getTxId());
+        txInfAndSts.setTxSts(TransactionIndividualStatus3Code.ACSC);
+        OriginalTransactionReference31 orgnlTxRef = new OriginalTransactionReference31();
+        orgnlTxRef.setIntrBkSttlmAmt(cdtTrf.getIntrBkSttlmAmt());
+        orgnlTxRef.setIntrBkSttlmDt(cdtTrf.getIntrBkSttlmDt());
+        orgnlTxRef.setPmtTpInf(cdtTrf.getPmtTpInf());
+        orgnlTxRef.setChrgBr(cdtTrf.getChrgBr());
+        orgnlTxRef.setDbtr(cdtTrf.getDbtr());
+        orgnlTxRef.setDbtrAgt(cdtTrf.getDbtrAgt());
+        orgnlTxRef.setCdtrAgt(cdtTrf.getCdtrAgt());
+        orgnlTxRef.setCdtr(cdtTrf.getCdtr());
+        txInfAndSts.setOrgnlTxRef(orgnlTxRef);
+        statusReport.getTxInfAndSts().add(txInfAndSts);
+
+        pacs002.setFIToFIPaymentStatusReport(statusReport);
+
+        // Generate MxPacs00200110 XML using .message()
+        String pacs002Xml = pacs002.message();
+        System.out.println("Generated MxPacs00200110 XML:\n" + pacs002Xml);
