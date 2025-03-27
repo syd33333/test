@@ -1,31 +1,45 @@
- @Bean
-    public JmsTemplate jmsTemplate() {
-        return new JmsTemplate(cachingConnectionFactory());
-    }
+ // Access the FIToFICustomerCreditTransferV08 object
+        FIToFICustomerCreditTransferV08 fiToFiCstmrCdtTrf = mx.getFIToFICstmrCdtTrf();
 
-    @Bean
-    public IntegrationFlow inboundFlow() {
-        String inQueueName = "IN.QUEUE"; // Incoming queue name
+        // Group Header details
+        GroupHeader91 grpHdr = fiToFiCstmrCdtTrf.getGrpHdr();
+        String msgId = grpHdr.getMsgId(); // e.g., "MSG-20250327-001"
+        String creDtTm = grpHdr.getCreDtTm().toString(); // e.g., "2025-03-27T15:30:00"
+        String settlementMethod = grpHdr.getSttlmInf().getSttlmMtd().value(); // e.g., "CLRG"
 
-        return IntegrationFlows
-            .from(Jms.messageDrivenChannelAdapter(cachingConnectionFactory())
-                .destination(inQueueName))
-            .log(message -> "Incoming payload: " + message.getPayload().getClass() + " - " + message.getPayload())
-            .channel("splitChannel") // Route to a common channel for splitting
-            .get();
-    }
+        // Get the CreditTransferTransactionInformation (assuming single transaction)
+        CreditTransferTransactionInformation10CdtTrfTxInf cdtTrfTxInf = fiToFiCstmrCdtTrf.getCdtTrfTxInf().get(0);
 
-    @Bean
-    public IntegrationFlow outboundFlow1(JmsTemplate jmsTemplate) {
-        String outQueue1 = "OUT.QUEUE1"; // First destination queue
+        // Payment Identification
+        PaymentIdentification3 pmtId = cdtTrfTxInf.getPmtId();
+        String instrId = pmtId.getInstrId(); // e.g., "INSTR12345"
+        String endToEndId = pmtId.getEndToEndId(); // e.g., "E2E-98765"
+        String txId = pmtId.getTxId(); // e.g., "TXID-001"
 
-        return IntegrationFlows
-            .from("splitChannel")
-            .transform(messageTransformer::transformForQueue1) // Transform for Queue1
-            .log(message -> "Payload after transform for Queue1: " + message.getPayload().getClass() + " - " + message.getPayload())
-            .handle((payload, headers) -> {
-                jmsTemplate.convertAndSend(outQueue1, payload); // Explicitly send as TextMessage
-                return null;
-            })
-            .get();
-    }
+        // Amount
+        ActiveOrHistoricCurrencyAndAmount intrBkSttlmAmt = cdtTrfTxInf.getIntrBkSttlmAmt();
+        String amount = intrBkSttlmAmt.getValue().toString(); // e.g., "1500.75"
+        String currency = intrBkSttlmAmt.getCcy(); // e.g., "EUR"
+
+        // Settlement Date
+        String intrBkSttlmDt = cdtTrfTxInf.getIntrBkSttlmDt() != null ? cdtTrfTxInf.getIntrBkSttlmDt().toString() : "N/A"; // e.g., "2025-03-28"
+
+        // Debtor
+        PartyIdentification43 dbtr = cdtTrfTxInf.getDbtr();
+        String debtorName = dbtr.getNm(); // e.g., "John Doe"
+        String debtorCountry = dbtr.getPstlAdr() != null ? dbtr.getPstlAdr().getCtry() : "N/A"; // e.g., "DE"
+        String debtorAddress = dbtr.getPstlAdr() != null && !dbtr.getPstlAdr().getAdrLine().isEmpty() ? dbtr.getPstlAdr().getAdrLine().get(0) : "N/A"; // e.g., "123 Main St"
+
+        // Debtor Account
+        CashAccount24 dbtrAcct = cdtTrfTxInf.getDbtrAcct();
+        String debtorIBAN = dbtrAcct != null && dbtrAcct.getId().getIBAN() != null ? dbtrAcct.getId().getIBAN() : "N/A"; // e.g., "DE89370400440532013000"
+
+        // Creditor
+        PartyIdentification43 cdtr = cdtTrfTxInf.getCdtr();
+        String creditorName = cdtr.getNm(); // e.g., "Jane Smith"
+        String creditorCountry = cdtr.getPstlAdr() != null ? cdtr.getPstlAdr().getCtry() : "N/A"; // e.g., "FR"
+        String creditorAddress = cdtr.getPstlAdr() != null && !cdtr.getPstlAdr().getAdrLine().isEmpty() ? cdtr.getPstlAdr().getAdrLine().get(0) : "N/A"; // e.g., "456 High St"
+
+        // Creditor Account
+        CashAccount24 cdtrAcct = cdtTrfTxInf.getCdtrAcct();
+        String creditorIBAN = cdtrAcct != null && cdtrAcct.getId().getIBAN() != null ? cdtrAcct.getId().getIBAN() : "N/A"; // e.g., "FR1420041010050500013M02606"
