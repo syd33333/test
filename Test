@@ -1,13 +1,38 @@
+    @Bean
+    public IntegrationFlow inboundFlow() {
+        String inQueueName = "IN.QUEUE"; // Incoming queue name
 
-            replaceTagValue(doc, "CreDt", "urn:iso:std:iso:20022:tech:xsd:head.001.001.03", currentTime);
+        return IntegrationFlows
+            .from(Jms.messageDrivenChannelAdapter(cachingConnectionFactory())
+                .destination(inQueueName))
+            .channel("splitChannel") // Route to a common channel for splitting
+            .get();
+    }
 
-private static void replaceTagValue(Document doc, String tagName, String namespace, String newValue) {
-        NodeList nodes = doc.getElementsByTagNameNS(namespace, tagName);
-        if (nodes.getLength() > 0) {
-            Element element = (Element) nodes.item(0); // Update the first occurrence
-            element.setTextContent(newValue);
-        } else {
-            throw new IllegalStateException("No <" + tagName + "> element found in namespace: " + namespace);
-        }
+    @Bean
+    public IntegrationFlow outboundFlow1() {
+        String outQueue1 = "OUT.QUEUE1"; // First destination queue
+
+        return IntegrationFlows
+            .from("splitChannel")
+            .transform(messageTransformer::transformForQueue1) // Transform for Queue1
+            .handle(Jms.outboundAdapter(cachingConnectionFactory())
+                .destination(outQueue1))
+            .get();
+    }
+
+    @Bean
+    public IntegrationFlow outboundFlow2() {
+        String outQueue2 = "OUT.QUEUE2"; // Second destination queue
+
+        return IntegrationFlows
+            .from("splitChannel")
+            .transform(messageTransformer::transformForQueue2) // Transform for Queue2
+            .handle(Jms.outboundAdapter(cachingConnectionFactory())
+                .destination(outQueue2))
+            .get();
     }
 }
+
+
+
