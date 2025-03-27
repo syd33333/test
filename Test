@@ -1,3 +1,8 @@
+ @Bean
+    public JmsTemplate jmsTemplate() {
+        return new JmsTemplate(cachingConnectionFactory());
+    }
+
     @Bean
     public IntegrationFlow inboundFlow() {
         String inQueueName = "IN.QUEUE"; // Incoming queue name
@@ -5,34 +10,22 @@
         return IntegrationFlows
             .from(Jms.messageDrivenChannelAdapter(cachingConnectionFactory())
                 .destination(inQueueName))
+            .log(message -> "Incoming payload: " + message.getPayload().getClass() + " - " + message.getPayload())
             .channel("splitChannel") // Route to a common channel for splitting
             .get();
     }
 
     @Bean
-    public IntegrationFlow outboundFlow1() {
+    public IntegrationFlow outboundFlow1(JmsTemplate jmsTemplate) {
         String outQueue1 = "OUT.QUEUE1"; // First destination queue
 
         return IntegrationFlows
             .from("splitChannel")
             .transform(messageTransformer::transformForQueue1) // Transform for Queue1
-            .handle(Jms.outboundAdapter(cachingConnectionFactory())
-                .destination(outQueue1))
+            .log(message -> "Payload after transform for Queue1: " + message.getPayload().getClass() + " - " + message.getPayload())
+            .handle((payload, headers) -> {
+                jmsTemplate.convertAndSend(outQueue1, payload); // Explicitly send as TextMessage
+                return null;
+            })
             .get();
     }
-
-    @Bean
-    public IntegrationFlow outboundFlow2() {
-        String outQueue2 = "OUT.QUEUE2"; // Second destination queue
-
-        return IntegrationFlows
-            .from("splitChannel")
-            .transform(messageTransformer::transformForQueue2) // Transform for Queue2
-            .handle(Jms.outboundAdapter(cachingConnectionFactory())
-                .destination(outQueue2))
-            .get();
-    }
-}
-
-
-
