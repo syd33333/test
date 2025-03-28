@@ -1,52 +1,15 @@
- // Access the FIToFICustomerCreditTransferV08 object
-        FIToFICustomerCreditTransferV08 fiToFiCstmrCdtTrf = mx.getFIToFICstmrCdtTrf();
-
-        // Group Header details (correct type: GroupHeader81 for pacs.008.001.08)
-        GroupHeader81 grpHdr = fiToFiCstmrCdtTrf.getGrpHdr();
-        String msgId = grpHdr.getMsgId(); // e.g., "MSG-20250327-001"
-        String creDtTm = grpHdr.getCreDtTm().toString(); // e.g., "2025-03-27T15:30:00"
-        String settlementMethod = grpHdr.getSttlmInf().getSttlmMtd().value(); // e.g., "CLRG"
-        String clearingSystem = grpHdr.getSttlmInf().getClrSys() != null ? 
-                                grpHdr.getSttlmInf().getClrSys().getPrtry() : "N/A"; // e.g., "SWIFT"
-
-        // Get the CreditTransferTransactionInformation (correct type: CreditTransferTransactionInformation10)
-        CreditTransferTransactionInformation10 cdtTrfTxInf = fiToFiCstmrCdtTrf.getCdtTrfTxInf().get(0);
-
-        // Payment Identification
-        PaymentIdentification3 pmtId = cdtTrfTxInf.getPmtId();
-        String instrId = pmtId.getInstrId(); // e.g., "INSTR12345"
-        String endToEndId = pmtId.getEndToEndId(); // e.g., "E2E-98765"
-        String txId = pmtId.getTxId(); // e.g., "TXID-001"
-
-        // Amount
-        ActiveOrHistoricCurrencyAndAmount intrBkSttlmAmt = cdtTrfTxInf.getIntrBkSttlmAmt();
-        String amount = intrBkSttlmAmt.getValue().toString(); // e.g., "1500.75"
-        String currency = intrBkSttlmAmt.getCcy(); // e.g., "EUR"
-
-        // Settlement Date
-        String intrBkSttlmDt = cdtTrfTxInf.getIntrBkSttlmDt() != null ? 
-                               cdtTrfTxInf.getIntrBkSttlmDt().toString() : "N/A"; // e.g., "2025-03-28"
-
-        // Debtor
-        PartyIdentification43 dbtr = cdtTrfTxInf.getDbtr();
-        String debtorName = dbtr.getNm(); // e.g., "John Doe"
-        String debtorCountry = dbtr.getPstlAdr() != null ? dbtr.getPstlAdr().getCtry() : "N/A"; // e.g., "DE"
-        String debtorAddress = dbtr.getPstlAdr() != null && !dbtr.getPstlAdr().getAdrLine().isEmpty() ? 
-                               dbtr.getPstlAdr().getAdrLine().get(0) : "N/A"; // e.g., "123 Main St"
-
-        // Debtor Account
-        CashAccount24 dbtrAcct = cdtTrfTxInf.getDbtrAcct();
-        String debtorIBAN = dbtrAcct != null && dbtrAcct.getId().getIBAN() != null ? 
-                            dbtrAcct.getId().getIBAN() : "N/A"; // e.g., "DE89370400440532013000"
-
-        // Creditor
-        PartyIdentification43 cdtr = cdtTrfTxInf.getCdtr();
-        String creditorName = cdtr.getNm(); // e.g., "Jane Smith"
-        String creditorCountry = cdtr.getPstlAdr() != null ? cdtr.getPstlAdr().getCtry() : "N/A"; // e.g., "FR"
-        String creditorAddress = cdtr.getPstlAdr() != null && !cdtr.getPstlAdr().getAdrLine().isEmpty() ? 
-                                 cdtr.getPstlAdr().getAdrLine().get(0) : "N/A"; // e.g., "456 High St"
-
-        // Creditor Account
-        CashAccount24 cdtrAcct = cdtTrfTxInf.getCdtrAcct();
-        String creditorIBAN = cdtrAcct != null && cdtrAcct.getId().getIBAN() != null ? 
-                              cdtrAcct.getId().getIBAN() : "N/A"; // e.g., "FR1420041010050500013M02606"
+        System.out.println("Message ID: " + msgId);
+        System.out.println("Creation DateTime: " + creDtTm);
+        System.out.println("Settlement Method: " + settlementMethod);
+        System.out.println("Clearing System: " + clearingSystem);
+        System.out.println("Instruction ID: " + instrId);
+        System.out.println("End-to-End ID: " + endToEndId);
+        System.out.println("Transaction ID: " + txId);
+        System.out.println("Amount: " + amount + " " + currency);
+        System.out.println("Settlement Date: " + intrBkSttlmDt);
+        System.out.println("Debtor Name: " + debtorName);
+        System.out.println("Debtor Address: " + debtorAddress + ", Country: " + debtorCountry);
+        System.out.println("Debtor IBAN: " + debtorIBAN);
+        System.out.println("Creditor Name: " + creditorName);
+        System.out.println("Creditor Address: " + creditorAddress + ", Country: " + creditorCountry);
+        System.out.println("Creditor IBAN: " + creditorIBAN);
