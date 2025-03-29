@@ -1,25 +1,13 @@
-@Service
-public class JsonFileReaderService {
+# Build stage
+FROM gradle:8.6-jdk17 AS builder
+WORKDIR /app
+COPY build.gradle settings.gradle ./
+COPY src ./src
+RUN gradle clean bootJar --no-daemon
 
-    public List<String> readJsonFilesFromResources() throws IOException {
-        // Use PathMatchingResourcePatternResolver to find all .json files in json folder
-        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-        Resource[] resources = resolver.getResources("classpath:json/*.json");
-
-        if (resources.length == 0) {
-            return List.of(); // Return empty list if no JSON files found
-        }
-
-        // Read each JSON file into a string using Guava's Resources.toString
-        return Arrays.stream(resources)
-                .map(resource -> {
-                    try {
-                        // Convert Spring Resource to URL and read with Guava
-                        return Resources.toString(resource.getURL(), StandardCharsets.UTF_8);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to read JSON file: " + resource.getFilename(), e);
-                    }
-                })
-                .collect(Collectors.toList());
-    }
-}
+# Runtime stage
+FROM openjdk:17-jdk17-slim
+WORKDIR /app
+COPY --from=builder /app/build/libs/app.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
