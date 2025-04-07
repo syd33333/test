@@ -1,15 +1,9 @@
-    public static String addTwoDecimals(String num1, String num2) {
-        try {
-            // Use BigDecimal for precise decimal arithmetic
-            BigDecimal number1 = new BigDecimal(num1);
-            BigDecimal number2 = new BigDecimal(num2);
+    @Bean
+    public MessageChannel outputChannel2() {
+        return MessageChannels.direct().get(); // Second output channel (e.g., for "channel2")
+    }
 
-            // Add the numbers
-            BigDecimal sum = number1.add(number2);
-
-            // Format to two decimal places using String.format
-            return String.format("%.2f", sum);
-
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid decimal number format: " + e.getMessage());
-        }
+    @Bean
+    public MessageChannel nullChannel() {
+        return MessageChannels.nullChannel().get(); // Discards messages that don’t need further processing
+    }
