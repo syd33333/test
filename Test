@@ -1,9 +1,14 @@
-    @Bean
-    public MessageChannel outputChannel2() {
-        return MessageChannels.direct().get(); // Second output channel (e.g., for "channel2")
-    }
-
-    @Bean
-    public MessageChannel nullChannel() {
-        return MessageChannels.nullChannel().get(); // Discards messages that don’t need further processing
+    public Mono<Message<?>> processAndDecide(Mono<String> payload) {
+        return payload.flatMap(this::saveEntity)
+                .hasElement()
+                .defaultIfEmpty(false) // Ensure we have a value
+                .map(isSaved -> {
+                    String routeTo = isSaved ? "outputChannel1" : "nullChannel";
+                    return MessageBuilder.withPayload("Save " + (isSaved ? "successful" : "failed") + ": " + payload.block()) // Block here if needed, but avoid in production
+                            .setHeader("routeToOutput", routeTo)
+                            .build();
+                })
+                .onErrorResume(e -> Mono.just(MessageBuilder.withPayload("Save failed: " + e.getMessage())
+                        .setHeader("routeToOutput", "nullChannel")
+                        .build())); // Handle errors by routing to nullChannel
     }
