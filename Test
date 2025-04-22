@@ -1,14 +1,7 @@
-    public Mono<Message<?>> processAndDecide(Mono<String> payload) {
-        return payload.flatMap(this::saveEntity)
-                .hasElement()
-                .defaultIfEmpty(false) // Ensure we have a value
-                .map(isSaved -> {
-                    String routeTo = isSaved ? "outputChannel1" : "nullChannel";
-                    return MessageBuilder.withPayload("Save " + (isSaved ? "successful" : "failed") + ": " + payload.block()) // Block here if needed, but avoid in production
-                            .setHeader("routeToOutput", routeTo)
-                            .build();
-                })
-                .onErrorResume(e -> Mono.just(MessageBuilder.withPayload("Save failed: " + e.getMessage())
-                        .setHeader("routeToOutput", "nullChannel")
-                        .build())); // Handle errors by routing to nullChannel
-    }
+# Set default Java version to JDK 7
+export JAVA_HOME=$(/usr/libexec/java_home -v 1.7)
+export PATH=$JAVA_HOME/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+
+# Java version switching aliases
+alias java17='export JAVA_HOME=$(/usr/libexec/java_home -v 17); export PATH=$JAVA_HOME/bin:$PATH; java -version'
+alias java7='export JAVA_HOME=$(/usr/libexec/java_home -v 1.7); export PATH=$JAVA_HOME/bin:$PATH; java -version'
