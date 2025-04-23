@@ -1,17 +1,16 @@
-# Set default Java version to JDK 11
-export JAVA_HOME=$(/usr/libexec/java_home -v 11)
-export PATH=$JAVA_HOME/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-
-# Function to switch to Java 17
-java17() {
-    export JAVA_HOME=$(/usr/libexec/java_home -v 17)
-    export PATH=$JAVA_HOME/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-    java -version
-}
-
-# Function to switch to Java 11
-java11() {
-    export JAVA_HOME=$(/usr/libexec/java_home -v 11)
-    export PATH=$JAVA_HOME/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-    java -version
-}
+        try {
+            // Parse XML to MxPain00800102 object
+            MxPain00800102 mx = MxPain00800102.parse(xml);
+            if (mx != null) {
+                // Access message elements
+                String msgId = mx.getCstmrDrctDbtInitn().getGrpHdr().getMsgId();
+                String amount = mx.getCstmrDrctDbtInitn().getPmtInf().get(0).getDrctDbtTxInf().get(0).getInstdAmt().getValue().toString();
+                String currency = mx.getCstmrDrctDbtInitn().getPmtInf().get(0).getDrctDbtTxInf().get(0).getInstdAmt().getCcy();
+                System.out.println("Message ID: " + msgId);
+                System.out.println("Amount: " + amount + " " + currency);
+            } else {
+                System.out.println("Failed to parse message.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
