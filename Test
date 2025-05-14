@@ -1,16 +1,16 @@
-        try {
-            // Parse XML to MxPain00800102 object
-            MxPain00800102 mx = MxPain00800102.parse(xml);
-            if (mx != null) {
-                // Access message elements
-                String msgId = mx.getCstmrDrctDbtInitn().getGrpHdr().getMsgId();
-                String amount = mx.getCstmrDrctDbtInitn().getPmtInf().get(0).getDrctDbtTxInf().get(0).getInstdAmt().getValue().toString();
-                String currency = mx.getCstmrDrctDbtInitn().getPmtInf().get(0).getDrctDbtTxInf().get(0).getInstdAmt().getCcy();
-                System.out.println("Message ID: " + msgId);
-                System.out.println("Amount: " + amount + " " + currency);
-            } else {
-                System.out.println("Failed to parse message.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        CustomerDirectDebitInitiationV02 cddi = mxPain008.getCustomerDirectDebitInitiationV02();
+        PaymentInformation3 pmtInf = cddi.getPmtInf().get(0);
+
+        // Creditor Information
+        String creditorIBAN = pmtInf.getCdtrAcct().getId().getIBAN();
+        String creditorBIC = pmtInf.getCdtrAgt().getFinInstnId().getBIC();
+        String creditorOtherId = pmtInf.getCdtrAgt().getFinInstnId().getOthr().getId();
+
+        // Debtor Information
+        DirectDebitTransactionInformation9 drctDbtTxInf = pmtInf.getDrctDbtTxInf().get(0);
+        String debtorIBAN = drctDbtTxInf.getDbtrAcct().getId().getIBAN();
+        String debtorBIC = drctDbtTxInf.getDbtrAgt().getFinInstnId().getBIC();
+        String debtorOtherId = drctDbtTxInf.getDbtrAgt().getFinInstnId().getOthr().getId();
+
+        // Currency (from InstdAmt)
+        String currency = drctDbtTxInf.getInstdAmt().getCcy();
