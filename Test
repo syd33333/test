@@ -10,3 +10,11 @@
         String debtorBIC = drctDbtTxInf.getDbtrAgt().getFinInstnId().getBIC();
         String debtorOtherId = drctDbtTxInf.getDbtrAgt().getFinInstnId().getOthr().getId();
         String currency = drctDbtTxInf.getInstdAmt().getCcy();
+   System.out.println("Creditor IBAN: " + creditorIBAN);
+        System.out.println("Creditor BIC: " + creditorBIC);
+        System.out.println("Creditor Other ID: " + creditorOtherId);
+        System.out.println("Debtor IBAN: " + debtorIBAN);
+        System.out.println("Debtor BIC: " + debtorBIC);
+        System.out.println("Debtor Other ID: " + debtorOtherId);
+        System.out.println("Currency: " + currency);
+    }
