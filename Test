@@ -1,16 +1,11 @@
-        CustomerDirectDebitInitiationV02 cddi = mxPain008.getCustomerDirectDebitInitiationV02();
+        CustomerDirectDebitInitiationV02 cddi = mxPain008.getCustomerDirectDebitInitiation();
         PaymentInformation3 pmtInf = cddi.getPmtInf().get(0);
 
-        // Creditor Information
         String creditorIBAN = pmtInf.getCdtrAcct().getId().getIBAN();
         String creditorBIC = pmtInf.getCdtrAgt().getFinInstnId().getBIC();
         String creditorOtherId = pmtInf.getCdtrAgt().getFinInstnId().getOthr().getId();
 
-        // Debtor Information
         DirectDebitTransactionInformation9 drctDbtTxInf = pmtInf.getDrctDbtTxInf().get(0);
         String debtorIBAN = drctDbtTxInf.getDbtrAcct().getId().getIBAN();
         String debtorBIC = drctDbtTxInf.getDbtrAgt().getFinInstnId().getBIC();
         String debtorOtherId = drctDbtTxInf.getDbtrAgt().getFinInstnId().getOthr().getId();
-
-        // Currency (from InstdAmt)
-        String currency = drctDbtTxInf.getInstdAmt().getCcy();
