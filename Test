@@ -1,7 +1,3 @@
-File pain002File = new File("pain002_" + UUID.randomUUID().toString() + ".xml");
-        pain002.write(pain002File);
-
-        return new File[]{camtFile, pain002File};
-
-
-        return new Object[]{xmlFile, responseFiles[0], responseFiles[1]}; // pain008, camt, pain002
+               .split() // Split the list of strings
+                .route("payload instanceof String ? (payload.contains('camt.054.001.02') ? 'toCamtChannel' : (payload.contains('pain.002.001.03') ? 'toPain002Channel' : 'toSftpChannel')) : 'toSftpChannel'")
+                .get();
