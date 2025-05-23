@@ -1,3 +1,1 @@
-               .split() // Split the list of strings
-                .route("payload instanceof String ? (payload.contains('camt.054.001.02') ? 'toCamtChannel' : (payload.contains('pain.002.001.03') ? 'toPain002Channel' : 'toSftpChannel')) : 'toSftpChannel'")
-                .get();
+                        .remoteFilenameGeneratorExpression("T(java.util.UUID).randomUUID().toString() + '.xml'"))
