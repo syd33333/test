@@ -1,1 +1,257 @@
-                        .fileNameExpression("'ab' + T(org.apache.commons.lang3.RandomStringUtils).randomAlphanumeric(32) + '.xml'"))
+// RejectResponse.java
+public class RejectResponse {
+    private String code;
+    private String message;
+    private boolean isApproved;
+
+    public RejectResponse(String code, String message) {
+        this.code = code;
+        this.message = message;
+        this.isApproved = false;
+    }
+
+    public RejectResponse() {
+        this.code = "00";
+        this.message = "Approved";
+        this.isApproved = true;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public boolean isApproved() {
+        return isApproved;
+    }
+
+    @Override
+    public String toString() {
+        return "RejectResponse{code='" + code + "', message='" + message + "', isApproved=" + isApproved + "}";
+    }
+}
+
+// ISOMessage.java
+import java.util.HashMap;
+import java.util.Map;
+
+public class ISOMessage {
+    private Map<String, String> fields;
+
+    public ISOMessage() {
+        this.fields = new HashMap<>();
+    }
+
+    public void setField(String key, String value) {
+        fields.put(key, value);
+    }
+
+    public String getField(String key) {
+        return fields.get(key);
+    }
+}
+
+// ValidationHandler.java
+public abstract class ValidationHandler {
+    protected ValidationHandler nextHandler;
+
+    public void setNext(ValidationHandler nextHandler) {
+        this.nextHandler = nextHandler;
+    }
+
+    public abstract RejectResponse validate(ISOMessage message);
+
+    protected RejectResponse next(ISOMessage message) {
+        if (nextHandler != null) {
+            return nextHandler.validate(message);
+        }
+        return new RejectResponse(); // Default: Approved if no issues
+    }
+}
+
+// AC03Handler.java
+import java.util.Map;
+
+public class AC03Handler extends ValidationHandler {
+    private final Map<String, Boolean> accountValidity; // Mock DB: account number -> isValid
+
+    public AC03Handler(Map<String, Boolean> accountValidity) {
+        this.accountValidity = accountValidity;
+    }
+
+    @Override
+    public RejectResponse validate(ISOMessage message) {
+        String creditorAccount = message.getField("creditorAccount");
+        if (creditorAccount == null || creditorAccount.trim().isEmpty() || !accountValidity.getOrDefault(creditorAccount, false)) {
+            return new RejectResponse("AC03", "Creditor account number invalid or missing");
+        }
+        return next(message);
+    }
+}
+
+// AC05Handler.java
+import java.util.Map;
+
+public class AC05Handler extends ValidationHandler {
+    private final Map<String, Boolean> accountStatus; // Mock DB: account number -> isActive
+
+    public AC05Handler(Map<String, Boolean> accountStatus) {
+        this.accountStatus = accountStatus;
+    }
+
+    @Override
+    public RejectResponse validate(ISOMessage message) {
+        String debtorAccount = message.getField("debtorAccount");
+        if (debtorAccount != null && accountStatus.containsKey(debtorAccount) && !accountStatus.get(debtorAccount)) {
+            return new RejectResponse("AC05", "Closed Debtor Account Number");
+        }
+        return next(message);
+    }
+}
+
+// AC07Handler.java
+import java.util.Map;
+
+public class AC07Handler extends ValidationHandler {
+    private final Map<String, Boolean> accountStatus; // Mock DB: account number -> isActive
+
+    public AC07Handler(Map<String, Boolean> accountStatus) {
+        this.accountStatus = accountStatus;
+    }
+
+    @Override
+    public RejectResponse validate(ISOMessage message) {
+        String beneficiaryAccount = message.getField("beneficiaryAccount");
+        if (beneficiaryAccount != null && accountStatus.containsKey(beneficiaryAccount) && !accountStatus.get(beneficiaryAccount)) {
+            return new RejectResponse("AC07", "Beneficiary account closed");
+        }
+        return next(message);
+    }
+}
+
+// ValidationChainBuilder.java
+import java.util.HashMap;
+import java.util.Map;
+
+public class ValidationChainBuilder {
+    private static ValidationChainBuilder instance;
+    private ValidationHandler chain;
+    private Map<String, Boolean> accountValidity;
+    private Map<String, Boolean> accountStatus;
+
+    // Private constructor for singleton
+    private ValidationChainBuilder() {
+        // Initialize mock databases
+        accountValidity = new HashMap<>();
+        accountValidity.put("123456", true);
+        accountValidity.put("789012", false);
+
+        accountStatus = new HashMap<>();
+        accountStatus.put("123456", true);
+        accountStatus.put("654321", false);
+        accountStatus.put("789012", false);
+
+        // Build the chain: AC03 -> AC05 -> AC07
+        ValidationHandler ac03Handler = new AC03Handler(accountValidity);
+        ValidationHandler ac05Handler = new AC05Handler(accountStatus);
+        ValidationHandler ac07Handler = new AC07Handler(accountStatus);
+
+        ac03Handler.setNext(ac05Handler);
+        ac05Handler.setNext(ac07Handler);
+        this.chain = ac03Handler;
+    }
+
+    // Singleton access
+    public static synchronized ValidationChainBuilder getInstance() {
+        if (instance == null) {
+            instance = new ValidationChainBuilder();
+        }
+        return instance;
+    }
+
+    // Get the pre-built chain
+    public ValidationHandler getValidationChain() {
+        return chain;
+    }
+
+    // Expose databases if needed for testing or updates
+    public Map<String, Boolean> getAccountValidity() {
+        return accountValidity;
+    }
+
+    public Map<String, Boolean> getAccountStatus() {
+        return accountStatus;
+    }
+}
+
+// BankEmulator.java
+public class BankEmulator {
+    private ValidationHandler validationChain;
+
+    public BankEmulator() {
+        // Get the pre-built chain from the builder
+        this.validationChain = ValidationChainBuilder.getInstance().getValidationChain();
+    }
+
+    public RejectResponse processISOMessage(ISOMessage message) {
+        return validationChain.validate(message);
+    }
+
+    // Test the emulator
+    public static void main(String[] args) {
+        BankEmulator emulator = new BankEmulator();
+
+        // Test Case 1: Missing creditor account
+        ISOMessage msg1 = new ISOMessage();
+        msg1.setField("debtorAccount", "123456");
+        msg1.setField("beneficiaryAccount", "789012");
+        System.out.println("Test 1: " + emulator.processISOMessage(msg1));
+
+        // Test Case 2: Closed debtor account
+        ISOMessage msg2 = new ISOMessage();
+        msg2.setField("creditorAccount", "123456");
+        msg2.setField("debtorAccount", "654321");
+        msg2.setField("beneficiaryAccount", "789012");
+        System.out.println("Test 2: " + emulator.processISOMessage(msg2));
+
+        // Test Case 3: Closed beneficiary account
+        ISOMessage msg3 = new ISOMessage();
+        msg3.setField("creditorAccount", "123456");
+        msg3.setField("debtorAccount", "123456");
+        msg3.setField("beneficiaryAccount", "789012");
+        System.out.println("Test 3: " + emulator.processISOMessage(msg3));
+
+        // Test Case 4: All valid
+        ISOMessage msg4 = new ISOMessage();
+        msg4.setField("creditorAccount", "123456");
+        msg4.setField("debtorAccount", "123456");
+        msg4.setField("beneficiaryAccount", "123456");
+        System.out.println("Test 4: " + emulator.processISOMessage(msg4));
+    }
+}
+
+// TransactionProcessor.java
+public class TransactionProcessor {
+    private ValidationHandler validationChain;
+
+    public TransactionProcessor() {
+        // Reuse the same chain from the builder
+        this.validationChain = ValidationChainBuilder.getInstance().getValidationChain();
+    }
+
+    public RejectResponse processTransaction(ISOMessage message) {
+        return validationChain.validate(message);
+    }
+
+    public static void main(String[] args) {
+        TransactionProcessor processor = new TransactionProcessor();
+        ISOMessage msg = new ISOMessage();
+        msg.setField("creditorAccount", "789012");
+        msg.setField("debtorAccount", "123456");
+        msg.setField("beneficiaryAccount", "123456");
+        System.out.println("TransactionProcessor Test: " + processor.processTransaction(msg));
+    }
+}
